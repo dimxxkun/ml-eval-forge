@@ -1,0 +1,9 @@
+{
+  "fingerprint": "a29c2504c42bfa6d74da88465e7b3aa4bc3220f92034abf67f8528032f3f176e",
+  "seed": 2026,
+  "sizes": {
+    "test": 480,
+    "train": 1440,
+    "valid": 480
+  }
+}

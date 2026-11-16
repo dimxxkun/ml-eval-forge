@@ -1,0 +1,9 @@
+{
+  "features": 8,
+  "max_absolute_error": 2.220446049250313e-16,
+  "rows": 3000,
+  "rowwise_seconds": 0.05683690000000752,
+  "seed": 2026,
+  "speedup": 219.36279429315522,
+  "vectorized_seconds": 0.00025909999999385036
+}
