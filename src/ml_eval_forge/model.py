@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
 import json
+from dataclasses import dataclass
 
 import numpy as np
 
@@ -40,7 +40,9 @@ class LogisticModel:
     def logits(self, features: np.ndarray) -> np.ndarray:
         return self._standardize(features) @ self.weights + self.bias
 
-    def predict_proba(self, features: np.ndarray, temperature: float = 1.0) -> np.ndarray:
+    def predict_proba(
+        self, features: np.ndarray, temperature: float = 1.0
+    ) -> np.ndarray:
         if temperature <= 0 or not np.isfinite(temperature):
             raise ValueError("temperature must be finite and positive")
         return sigmoid(self.logits(features) / temperature)
@@ -72,9 +74,17 @@ def train_logistic(
 
     x = np.asarray(features, dtype=np.float64)
     y = np.asarray(labels, dtype=np.float64)
-    if x.ndim != 2 or y.ndim != 1 or x.shape[0] != y.shape[0]:
+    if x.ndim != 2 or min(x.shape) == 0 or y.ndim != 1 or x.shape[0] != y.shape[0]:
         raise ValueError("features must be 2-D and labels must match its row count")
-    if epochs < 1 or learning_rate <= 0 or l2 < 0:
+    if not np.isfinite(x).all() or not np.isin(y, [0, 1]).all():
+        raise ValueError("features must be finite and labels must be binary")
+    if (
+        type(epochs) is not int
+        or epochs < 1
+        or not np.isfinite([learning_rate, l2]).all()
+        or learning_rate <= 0
+        or l2 < 0
+    ):
         raise ValueError("epochs must be positive; learning_rate and l2 must be valid")
 
     mean = x.mean(axis=0)
@@ -89,7 +99,9 @@ def train_logistic(
         error = probabilities - y
         weights -= learning_rate * (standardized.T @ error / x.shape[0] + l2 * weights)
         bias -= learning_rate * float(error.mean())
-        history.append(log_loss(y, probabilities) + 0.5 * l2 * float(weights @ weights))
+        updated_logits = standardized @ weights + bias
+        objective = np.mean(np.logaddexp(0.0, updated_logits) - y * updated_logits)
+        history.append(float(objective) + 0.5 * l2 * float(weights @ weights))
 
     model = LogisticModel(mean, scale, weights, bias, seed)
     if not np.all(np.isfinite(history)):

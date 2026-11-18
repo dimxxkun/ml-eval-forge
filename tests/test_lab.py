@@ -1,7 +1,7 @@
 import json
-from pathlib import Path
 import tempfile
 import unittest
+from pathlib import Path
 
 import numpy as np
 
@@ -49,6 +49,28 @@ class EvalForgeTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             report = run_benchmark(Path(directory) / "benchmark.json", rows=150)
             self.assertLessEqual(report["max_absolute_error"], 1e-12)
+
+    def test_recorded_loss_matches_the_saved_model(self):
+        bundle = make_dataset(seed=31)
+        model, history = train_logistic(
+            bundle.x_train, bundle.y_train, epochs=1, l2=0.03
+        )
+        probabilities = model.predict_proba(bundle.x_train)
+        y = bundle.y_train
+        expected = -np.mean(
+            y * np.log(probabilities) + (1 - y) * np.log1p(-probabilities)
+        )
+        expected += 0.03 * np.dot(model.weights, model.weights) / 2
+        self.assertAlmostEqual(history[-1], expected, places=12)
+
+    def test_invalid_training_data_is_rejected(self):
+        for x, y in (
+            (np.empty((0, 3)), np.empty(0)),
+            (np.ones((2, 3)), np.array([0, 2])),
+            (np.full((2, 3), np.nan), np.array([0, 1])),
+        ):
+            with self.subTest(x=x, y=y), self.assertRaises(ValueError):
+                train_logistic(x, y)
 
 
 if __name__ == "__main__":

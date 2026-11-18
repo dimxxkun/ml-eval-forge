@@ -1,0 +1,2 @@
+# Recorded report environment. Python 3.12; other platforms may change numerical bytes.
+numpy==2.5.5
